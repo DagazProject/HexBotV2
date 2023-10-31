@@ -28,6 +28,7 @@ let sid     = null;
 let uid     = null;
 let setup   = null;
 let turn    = null;
+let last    = null;
 
 var winston = require('winston');
 require('winston-daily-rotate-file');
@@ -177,6 +178,7 @@ let checkTurn = function(app) {
 //          console.log(response.data);
             sid = response.data[0].id;
             setup = response.data[0].last_setup;
+            last = response.data[0].last_turn;
             app.state = STATE.RECO;
         } else {
             app.state = STATE.RQST;
@@ -310,11 +312,17 @@ function FinishTurnCallback(sid, move, ix, fen, value, time) {
     console.log('move = ' + move + ', value=' + value + ', time = ' + time);
     logger.info('move = ' + move + ', value=' + value + ', time = ' + time);
     app.state  = STATE.WAIT;
+    let tn = null;
+    if (last !== null) {
+        last++;
+        tn = last;
+    }
     axios.post(SERVICE + '/api/move', {
         uid: uid,
         next_player: (turn == 0) ? 2 : 1,
         move_str: move,
         setup_str: getSetup(fen),
+        turn_num: tn,
         note: 'value=' + value + ', time = ' + time
     }, {
         headers: { Authorization: `Bearer ${TOKEN}` }
